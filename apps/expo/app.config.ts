@@ -1,4 +1,4 @@
-import type { ExpoConfig, ConfigContext } from 'expo/config';
+import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -17,38 +17,37 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
+    bundleIdentifier: 'com.perhats.epson-print',
     infoPlist: {
-      NSBluetoothAlwaysUsageDescription: "Use this to communicate with the printer.",
-      UISupportedExternalAccessoryProtocols: ["com.epson.escpos"]
-    }
+      NSBluetoothAlwaysUsageDescription: 'Use this to communicate with the printer.',
+      UISupportedExternalAccessoryProtocols: ['com.epson.escpos'],
+    },
   },
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
+    package: 'com.perhats.epsonprint',
     permissions: [
-      "android.permission.INTERNET",
-      "android.permission.BLUETOOTH_SCAN",
-      "android.permission.BLUETOOTH_CONNECT",
-      "android.permission.BLUETOOTH",
-      "android.permission.BLUETOOTH_ADMIN",
-      "android.permission.ACCESS_FINE_LOCATION",
-      "android.permission.ACCESS_COARSE_LOCATION",
-      "android.permission.WRITE_EXTERNAL_STORAGE",
-      "android.permission.READ_EXTERNAL_STORAGE"
-    ]
+      'android.permission.INTERNET',
+      'android.permission.BLUETOOTH_SCAN',
+      'android.permission.BLUETOOTH_CONNECT',
+      'android.permission.BLUETOOTH',
+      'android.permission.BLUETOOTH_ADMIN',
+      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.ACCESS_COARSE_LOCATION',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.READ_EXTERNAL_STORAGE',
+    ],
   },
   web: {
     bundler: 'metro',
     output: 'static',
     favicon: './assets/images/favicon.png',
   },
-  plugins: [
-    'expo-router',
-    'react-native-esc-pos-printer'
-  ],
+  plugins: ['expo-router'],
   experiments: {
     typedRoutes: true,
   },
-}); 
+});

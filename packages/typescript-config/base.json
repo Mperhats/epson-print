@@ -12,7 +12,9 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "target": "ESNext"
+    "target": "ESNext",
+    "jsxFactory": "React.createElement",
+    "jsxFragmentFactory": "React.Fragment"
   },
   "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
 }

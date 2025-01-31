@@ -45,7 +45,10 @@
       "**/coverage",
       "**/babel.config.js",
       "**/metro.config.js",
-      "**/*.config.js"
+      "**/*.config.js",
+      "**/__tests__/**",
+      "**/*.test.*",
+      "**/*.spec.*"
     ]
   }
-} 
+}
