@@ -1,6 +1,6 @@
 import { Order } from '@/components/Order/Order';
 import { usePrinterPrint } from '@/components/PrinterProvider';
-import { printOrder } from '@/services/order-printer.adapter';
+import { buildOrderReceipt } from '@/services/order-printer.adapter';
 import type {
   OrderDeliveryInfoMerchantDtoCourierStatusEnum,
   OrderMerchantDto,
@@ -8,7 +8,7 @@ import type {
 import { useTheme } from '@react-navigation/native';
 import { memo } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import activeItems from '../data/active-items.json';
+import activeItems from '../data/shorter-items.json';
 
 export default memo(function OrdersScreen() {
   const { print } = usePrinterPrint();
@@ -37,7 +37,7 @@ export default memo(function OrdersScreen() {
   })) as unknown as OrderMerchantDto[];
 
   const handleOrderPress = async (order: OrderMerchantDto) => {
-    const printTask = printOrder(order);
+    const printTask = buildOrderReceipt(order);
     await print(printTask);
   };
 
