@@ -1,4 +1,4 @@
-import { usePrinter } from '@/hooks/usePrinter';
+import { usePrinterPrint } from '@/components/PrinterProvider';
 import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
 import React from 'react';
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -25,7 +25,7 @@ interface OrderModalProps {
 }
 
 export const OrderModal = ({ visible, onClose, order, printer, theme }: OrderModalProps) => {
-  const { printing, currentStatus, error, printOrder } = usePrinter(printer);
+  const { printing, error, printOrder } = usePrinterPrint();
 
   const handlePrint = async () => {
     if (order) {
@@ -41,7 +41,6 @@ export const OrderModal = ({ visible, onClose, order, printer, theme }: OrderMod
         <View style={[styles.modalView, { backgroundColor: theme.colors.contrast }]}>
           <ScrollView style={styles.scrollView}>
             <Order selectedOrder={order} theme={theme} />
-            {currentStatus && <PrinterStatus status={currentStatus} />}
             {error && (
               <View style={styles.errorContainer}>
                 <Text style={[styles.errorText, { color: theme.colors.primary }]}>{error}</Text>
@@ -50,12 +49,7 @@ export const OrderModal = ({ visible, onClose, order, printer, theme }: OrderMod
           </ScrollView>
 
           <View style={styles.buttonContainer}>
-            <Button
-              title="Print Order"
-              onPress={handlePrint}
-              loading={printing}
-              topOffset={false}
-            />
+            <Button title="Print Order" onPress={handlePrint} loading={printing} topOffset={false} />
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: theme.colors.contrastSubtle }]}
               onPress={onClose}

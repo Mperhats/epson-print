@@ -17,7 +17,7 @@ export const Button = ({
   topOffset = false,
   variant = 'primary',
 }: ButtonProps) => {
-  const { colors, dark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <TouchableOpacity

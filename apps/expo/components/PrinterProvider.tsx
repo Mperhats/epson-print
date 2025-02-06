@@ -7,6 +7,8 @@ import {
   type PrinterStatusResponse,
   usePrintersDiscovery,
 } from 'react-native-esc-pos-printer';
+import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
+import { OrderPrinterAdapter } from '@/services/order-printer.adapter';
 
 /**
  * Core interfaces for printer state management
@@ -36,10 +38,21 @@ interface PrinterActions {
   clearPrinter: () => void;
 }
 
+interface PrinterPrintState {
+  printing: boolean;
+  error: string | null;
+}
+
+interface PrinterPrintActions {
+  printOrder: (order: OrderMerchantDto) => Promise<void>;
+}
+
 type PrinterContextType = PrinterDiscoveryState &
   PrinterConnectionState &
   PrinterUIState &
-  PrinterActions;
+  PrinterActions &
+  PrinterPrintState &
+  PrinterPrintActions;
 
 const PrinterContext = createContext<PrinterContextType | null>(null);
 
@@ -88,6 +101,17 @@ export const usePrinterActions = () => {
 };
 
 /**
+ * Hook for printer printing functionality
+ * Use this when you need to print orders
+ */
+export const usePrinterPrint = () => {
+  const context = useContext(PrinterContext);
+  if (!context) throw new Error('usePrinterPrint must be used within a PrinterProvider');
+  const { printing, error, printOrder } = context;
+  return { printing, error, printOrder };
+};
+
+/**
  * Main printer context hook
  * Use this when you need access to all printer functionality
  */
@@ -131,6 +155,8 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedPrinter, setSelectedPrinter] = useState<DeviceInfo | null>(null);
   const [printerStatus, setPrinterStatus] = useState<PrinterStatusResponse | null>(null);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const printerInstance = useMemo(() => createPrinterInstance(selectedPrinter), [selectedPrinter]);
 
@@ -138,6 +164,8 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     if (!printerInstance) return null;
     return new EscPosPrinterService(printerInstance);
   }, [printerInstance]);
+
+  const orderAdapter = useMemo(() => new OrderPrinterAdapter(), []);
 
   useEffect(() => {
     if (!printerInstance) {
@@ -167,6 +195,25 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     setSelectedPrinter(null);
   };
 
+  const printOrder = async (order: OrderMerchantDto) => {
+    if (!printerService) {
+      setError('No printer available');
+      return;
+    }
+
+    try {
+      setPrinting(true);
+      setError(null);
+
+      const printJob = orderAdapter.createPrintJob(order);
+      await printerService.print(printJob);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to print');
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   const contextValue: PrinterContextType = {
     isDiscovering,
     startDiscovery: start,
@@ -181,6 +228,9 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     setShowPrinterModal,
     selectPrinter,
     clearPrinter,
+    printing,
+    error,
+    printOrder,
   };
 
   return <PrinterContext.Provider value={contextValue}>{children}</PrinterContext.Provider>;
