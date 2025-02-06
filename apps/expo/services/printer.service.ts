@@ -1,4 +1,3 @@
-import type { PrinterStatusResponse } from 'react-native-esc-pos-printer';
 import { Printer, PrinterConstants } from 'react-native-esc-pos-printer';
 
 export interface PrintJob {
@@ -29,13 +28,6 @@ const getAlignment = (align: string): number => {
     default:
       return PrinterConstants.ALIGN_LEFT;
   }
-};
-
-const ensureConnection = async (printer: Printer): Promise<void> => {
-  await Printer.tryToConnectUntil(
-    printer,
-    (status) => status.online.statusCode === PrinterConstants.TRUE,
-  );
 };
 
 const printContent = async (printer: Printer, content: PrintContent): Promise<void> => {
@@ -73,31 +65,8 @@ const printSection = async (printer: Printer, section: PrintSection): Promise<vo
   }
 };
 
-export const print = async (printer: Printer, job: PrintJob): Promise<PrinterStatusResponse> => {
-  try {
-    const result = await printer.addQueueTask(async () => {
-      await ensureConnection(printer);
-
-      for (const section of job.sections) {
-        await printSection(printer, section);
-      }
-
-      const result = await printer.sendData();
-      await printer.disconnect();
-      return result;
-    });
-
-    if (!result) {
-      throw new Error('Printer did not return a status response');
-    }
-
-    return result as PrinterStatusResponse;
-  } catch (error) {
-    await printer.disconnect();
-    throw error;
+export const executeJob = async (printer: Printer, job: PrintJob): Promise<void> => {
+  for (const section of job.sections) {
+    await printSection(printer, section);
   }
-};
-
-export const createPrinter = (target: string, deviceName: string): Printer => {
-  return new Printer({ target, deviceName });
 };

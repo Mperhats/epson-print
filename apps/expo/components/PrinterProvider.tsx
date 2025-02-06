@@ -1,5 +1,5 @@
 import type { PrintJob } from '@/services/printer.service';
-import { createPrinter, print } from '@/services/printer.service';
+import { executeJob } from '@/services/printer.service';
 import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { DeviceInfo } from 'react-native-esc-pos-printer';
 import {
@@ -131,8 +131,14 @@ function serializePrinterData(printer: DeviceInfo): DeviceInfo {
 }
 
 /**
+ * Creates a new printer instance with the given target and device name
+ */
+const createPrinter = (target: string, deviceName: string): Printer => {
+  return new Printer({ target, deviceName });
+};
+
+/**
  * Provider component that manages all printer-related state and functionality
- * Handles printer discovery, connection management, and UI state
  */
 export const PrinterProvider = ({ children }: { children: ReactNode }) => {
   const {
@@ -182,6 +188,13 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     setSelectedPrinter(null);
   };
 
+  const ensureConnection = async (printer: Printer): Promise<void> => {
+    await Printer.tryToConnectUntil(
+      printer,
+      (status) => status.online.statusCode === PrinterConstants.TRUE,
+    );
+  };
+
   const handlePrint = async (job: PrintJob) => {
     if (!printerInstance) {
       setError('No printer available');
@@ -191,9 +204,17 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     try {
       setPrinting(true);
       setError(null);
-      await print(printerInstance, job);
+
+      await printerInstance.addQueueTask(async () => {
+        await ensureConnection(printerInstance);
+        await executeJob(printerInstance, job);
+        const result = await printerInstance.sendData();
+        await printerInstance.disconnect();
+        return result;
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to print');
+      await printerInstance.disconnect();
     } finally {
       setPrinting(false);
     }
