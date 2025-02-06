@@ -16,52 +16,57 @@ interface PrinterModalProps {
   onStartDiscovery: () => void;
 }
 
-export const PrinterModal = memo(({
-  isVisible,
-  onClose,
-  printers,
-  selectedPrinter,
-  onSelectPrinter,
-  isDiscovering,
-  onStartDiscovery,
-}: PrinterModalProps) => {
-  const { colors } = useTheme();
+export const PrinterModal = memo(
+  ({
+    isVisible,
+    onClose,
+    printers,
+    selectedPrinter,
+    onSelectPrinter,
+    isDiscovering,
+    onStartDiscovery,
+  }: PrinterModalProps) => {
+    const { colors } = useTheme();
 
-  const handlePrinterSelect = useCallback((printer: DeviceInfo) => {
-    onSelectPrinter(printer);
-    onClose();
-  }, [onSelectPrinter, onClose]);
+    const handlePrinterSelect = useCallback(
+      (printer: DeviceInfo) => {
+        onSelectPrinter(printer);
+        onClose();
+      },
+      [onSelectPrinter, onClose],
+    );
 
-  return (
-    <Modal visible={isVisible} animationType="slide" transparent>
-      <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.75)' }]}>
-        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-          <Text style={[styles.modalTitle, { color: colors.text }]}>Select Printer</Text>
-          <ScrollView style={styles.printerList}>
-            {printers.map((printer) => (
-              <PrinterItem
-                key={printer.target}
-                printer={printer}
-                isSelected={selectedPrinter?.target === printer.target}
-                onSelect={handlePrinterSelect}
-                colors={colors}
+    return (
+      <Modal visible={isVisible} animationType="slide" transparent>
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.75)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Printer</Text>
+            <ScrollView style={styles.printerList}>
+              {printers.map((printer) => (
+                <PrinterItem
+                  key={printer.target}
+                  printer={printer}
+                  isSelected={selectedPrinter?.target === printer.target}
+                  onSelect={handlePrinterSelect}
+                  colors={colors}
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.buttonContainer}>
+              <Button
+                title={isDiscovering ? 'Searching...' : 'Search for Printers'}
+                onPress={onStartDiscovery}
+                loading={isDiscovering}
+                variant="primary"
               />
-            ))}
-          </ScrollView>
-          <View style={styles.buttonContainer}>
-            <Button
-              title={isDiscovering ? 'Searching...' : 'Search for Printers'}
-              onPress={onStartDiscovery}
-              loading={isDiscovering}
-              variant="primary"
-            />
-            <Button title="Close" variant="secondary" onPress={onClose} />
+              <Button title="Close" variant="secondary" onPress={onClose} />
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
-  );
-});
+      </Modal>
+    );
+  },
+);
 
 PrinterModal.displayName = 'PrinterModal';
 
@@ -99,4 +104,4 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 16,
   },
-}); 
+});

@@ -2,9 +2,9 @@ import { useTheme } from '@react-navigation/native';
 import React, { memo } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
-import { usePrinterContext } from '@/components/PrinterProvider';
 import { PrinterModal } from '@/components/PrinterButton/PrinterModal';
 import { PrinterStatusBadge } from '@/components/PrinterButton/PrinterStatusBadge';
+import { usePrinterContext } from '@/components/PrinterProvider';
 
 export const PrinterButton = memo(() => {
   const {

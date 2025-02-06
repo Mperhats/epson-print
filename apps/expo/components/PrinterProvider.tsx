@@ -149,8 +149,9 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   const printerInstance = useMemo(
-    () => selectedPrinter ? createPrinter(selectedPrinter.target, selectedPrinter.deviceName) : null,
-    [selectedPrinter]
+    () =>
+      selectedPrinter ? createPrinter(selectedPrinter.target, selectedPrinter.deviceName) : null,
+    [selectedPrinter],
   );
 
   useEffect(() => {
