@@ -1,4 +1,6 @@
+import { OrderPrinterAdapter } from '@/services/order-printer.adapter';
 import { EscPosPrinterService, type PrinterService } from '@/services/printer.service';
+import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
 import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { DeviceInfo } from 'react-native-esc-pos-printer';
 import {
@@ -7,8 +9,6 @@ import {
   type PrinterStatusResponse,
   usePrintersDiscovery,
 } from 'react-native-esc-pos-printer';
-import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
-import { OrderPrinterAdapter } from '@/services/order-printer.adapter';
 
 /**
  * Core interfaces for printer state management

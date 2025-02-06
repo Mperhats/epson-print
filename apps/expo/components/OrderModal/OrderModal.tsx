@@ -49,7 +49,12 @@ export const OrderModal = ({ visible, onClose, order, printer, theme }: OrderMod
           </ScrollView>
 
           <View style={styles.buttonContainer}>
-            <Button title="Print Order" onPress={handlePrint} loading={printing} topOffset={false} />
+            <Button
+              title="Print Order"
+              onPress={handlePrint}
+              loading={printing}
+              topOffset={false}
+            />
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: theme.colors.contrastSubtle }]}
               onPress={onClose}

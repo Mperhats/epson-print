@@ -1,8 +1,8 @@
-import { memo } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import { usePrintersDiscovery } from 'react-native-esc-pos-printer';
-import { PrintersList, Button, ScreenTitle } from '@/components';
+import { Button, PrintersList, ScreenTitle } from '@/components';
 import { useRouter } from 'expo-router';
+import { memo } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { usePrintersDiscovery } from 'react-native-esc-pos-printer';
 import type { DeviceInfo } from 'react-native-esc-pos-printer';
 
 export default memo(function DiscoveryScreen() {
@@ -19,21 +19,15 @@ export default memo(function DiscoveryScreen() {
           if (printer) {
             router.push({
               pathname: '/printer',
-              params: { printer: JSON.stringify(printer) }
+              params: { printer: JSON.stringify(printer) },
             });
           }
         }}
         printers={printers}
       />
       <View style={styles.contentContainer}>
-        <Button
-          loading={isDiscovering}
-          title="Search"
-          onPress={() => start()}
-        />
-        {printerError ? (
-          <Text style={styles.errorText}>{printerError.message}</Text>
-        ) : null}
+        <Button loading={isDiscovering} title="Search" onPress={() => start()} />
+        {printerError ? <Text style={styles.errorText}>{printerError.message}</Text> : null}
       </View>
     </View>
   );
