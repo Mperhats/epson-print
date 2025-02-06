@@ -22,20 +22,23 @@ const wrapText = (text: string, maxWidth: number): string[] => {
 };
 
 // Print a box with title and content
-const printBox = async (printer: Printer, { title, content, width }: { title: string, content: string, width: number }) => {
+const printBox = async (
+  printer: Printer,
+  { title, content, width }: { title: string; content: string; width: number },
+) => {
   const lines = wrapText(content, width - 4);
   const padding = ' '.repeat(width - title.length - 3);
-  
+
   await printer.addText(`┌${'─'.repeat(width - 2)}┐`);
   await printer.addFeedLine(1);
   await printer.addText(`│ ${title}${padding}│`);
   await printer.addFeedLine(1);
-  
+
   for (const line of lines) {
     await printer.addText(`│ ${line.padEnd(width - 3)}│`);
     await printer.addFeedLine(1);
   }
-  
+
   await printer.addText(`└${'─'.repeat(width - 2)}┘`);
 };
 
@@ -66,12 +69,12 @@ const printOrderIdentifier = async (printer: Printer, orderId: string, customerN
   await printer.addLineSpace(32);
   await printer.addTextSize({ width: 2, height: 2 });
   await printer.addTextStyle({ reverse: PrinterConstants.TRUE });
-  
+
   await Printer.addTextLine(printer, {
     left: `  ${orderId}`,
     right: `${customerName}  `,
   });
-  
+
   await printer.addTextStyle({});
   await printer.addTextSize({ width: 1, height: 1 });
   await printer.addLineSpace(32);
@@ -83,7 +86,7 @@ const printFulfillmentMode = async (printer: Printer, mode: string) => {
   await printer.addTextAlign(PrinterConstants.ALIGN_CENTER);
   await printer.addText('─'.repeat(42));
   await printer.addFeedLine(1);
-  
+
   await printer.addTextSize({ width: 2, height: 2 });
   await printer.addTextStyle({ em: PrinterConstants.TRUE });
   await printer.addTextSmooth(PrinterConstants.TRUE);
@@ -91,7 +94,7 @@ const printFulfillmentMode = async (printer: Printer, mode: string) => {
   await printer.addTextSmooth(PrinterConstants.FALSE);
   await printer.addTextStyle({});
   await printer.addTextSize({ width: 1, height: 1 });
-  
+
   await printer.addFeedLine(1);
   await printer.addText('─'.repeat(42));
   await printer.addFeedLine(1);
@@ -109,7 +112,7 @@ const printOrderItem = async (printer: Printer, item: CartItemMerchantDto) => {
   await printer.addFeedLine(1);
 
   // Check if item has modifiers
-  const hasModifiers = (item.cartModifierGroups || []).some(group => group.modifiers.length > 0);
+  const hasModifiers = (item.cartModifierGroups || []).some((group) => group.modifiers.length > 0);
 
   // Print modifiers with proper indentation
   if (hasModifiers) {
@@ -130,7 +133,7 @@ const printOrderItem = async (printer: Printer, item: CartItemMerchantDto) => {
     await printBox(printer, {
       title: 'Special Instructions:',
       content: item.specialInstructions,
-      width: 38
+      width: 38,
     });
   }
 
@@ -141,7 +144,10 @@ const printOrderItem = async (printer: Printer, item: CartItemMerchantDto) => {
 };
 
 // Print totals section
-const printTotals = async (printer: Printer, { subtotal, tax, total }: { subtotal: number, tax: number, total: number }) => {
+const printTotals = async (
+  printer: Printer,
+  { subtotal, tax, total }: { subtotal: number; tax: number; total: number },
+) => {
   await printer.addFeedLine(1);
 
   await Printer.addTextLine(printer, {
@@ -159,12 +165,12 @@ const printTotals = async (printer: Printer, { subtotal, tax, total }: { subtota
   await printer.addTextSize({ width: 2, height: 1 });
   await printer.addTextStyle({ em: PrinterConstants.TRUE });
   await printer.addTextSmooth(PrinterConstants.TRUE);
-  
+
   await Printer.addTextLine(printer, {
     left: 'TOTAL',
     right: formatPrice(total),
   });
-  
+
   await printer.addTextSmooth(PrinterConstants.FALSE);
   await printer.addTextStyle({});
   await printer.addTextSize({ width: 1, height: 1 });
@@ -226,29 +232,26 @@ export const buildOrderReceipt = (order: OrderMerchantDto) => {
       await printBox(printer, {
         title: 'Order Notes:',
         content: order.orderNotes,
-        width: 42
+        width: 42,
       });
       await printer.addFeedLine(2);
     }
 
     // Calculate and print totals
-    const taxAmount = order.cost?.fees?.reduce(
-      (sum, fee) => (fee.description?.toLowerCase().includes('tax') ? sum + fee.amount : sum),
-      0
-    ) || 0;
+    const taxAmount =
+      order.cost?.fees?.reduce(
+        (sum, fee) => (fee.description?.toLowerCase().includes('tax') ? sum + fee.amount : sum),
+        0,
+      ) || 0;
     const subtotal = order.cost?.subtotalAmount || 0;
     await printTotals(printer, {
       subtotal,
       tax: taxAmount,
-      total: subtotal + taxAmount
+      total: subtotal + taxAmount,
     });
 
     // Print footer
-    await printFooter(
-      printer,
-      order.merchant?.name,
-      order.merchant?.phone
-    );
+    await printFooter(printer, order.merchant?.name, order.merchant?.phone);
 
     await printer.addCut();
   };
