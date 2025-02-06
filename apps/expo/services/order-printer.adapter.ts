@@ -169,23 +169,26 @@ const buildOrderInfo = async (printer: Printer, order: OrderMerchantDto): Promis
 const buildModifiers = async (printer: Printer, item: CartItemMerchantDto): Promise<void> => {
   for (const group of item.cartModifierGroups || []) {
     for (const modifier of group.modifiers) {
-      await printer.addText(
-        `  ${modifier.quantity}x ${modifier.name}${
-          modifier.price > 0 ? ` ${formatPrice(modifier.price)}` : ''
-        }`,
-      );
+      await Printer.addTextLine(printer, {
+        left: `  ${modifier.quantity}x ${modifier.name}`,
+        right: modifier.price > 0 ? formatPrice(modifier.price) : '',
+      });
       await printer.addFeedLine(1);
     }
   }
 };
 
 const buildOrderItem = async (printer: Printer, item: CartItemMerchantDto): Promise<void> => {
-  await withStyle(printer, { em: PrinterConstants.TRUE }, async () => {
-    await Printer.addTextLine(printer, {
-      left: `${item.quantity}x ${item.name}`,
-      right: formatPrice(item.price * item.quantity),
-    });
-  });
+  await withStyle(
+    printer,
+    { em: PrinterConstants.TRUE },
+    async () => {
+      await Printer.addTextLine(printer, {
+        left: `${item.quantity}x ${item.name}`,
+        right: formatPrice(item.price * item.quantity),
+      });
+    }
+  );
   await printer.addFeedLine(1);
 
   await buildModifiers(printer, item);
@@ -193,7 +196,7 @@ const buildOrderItem = async (printer: Printer, item: CartItemMerchantDto): Prom
   if (item.specialInstructions) {
     await createBox(printer, 'Special Instructions:', item.specialInstructions, {
       width: 38,
-      contentPadding: 1,
+      contentPadding: 0,
     });
   }
 };
