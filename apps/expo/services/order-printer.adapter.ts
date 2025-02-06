@@ -33,7 +33,7 @@ const createBoxLine = (
   content: string,
   { width, indent = 2 }: BoxConfig,
   leftChar: string,
-  rightChar: string,
+  rightChar: string
 ): string => {
   const indentStr = ' '.repeat(indent);
   const paddedContent = content.padEnd(width - 2);
@@ -44,13 +44,12 @@ const createBox = async (
   printer: Printer,
   title: string,
   content: string,
-  config: BoxConfig,
+  config: BoxConfig
 ): Promise<void> => {
   const { width, contentPadding = 1 } = config;
   const contentWidth = width - 4;
   const wrappedLines = wrapText(content, contentWidth);
 
-  await printer.addFeedLine(1);
   await printer.addText(createBoxLine('─'.repeat(width - 2), config, '┌', '┐'));
   await printer.addFeedLine(1);
   await printer.addText(createBoxLine(` ${title}`, config, '│', '│'));
@@ -69,7 +68,7 @@ const createBox = async (
 const withStyle = async (
   printer: Printer,
   style: { [key: string]: number },
-  action: () => Promise<void>,
+  action: () => Promise<void>
 ): Promise<void> => {
   for (const [key, value] of Object.entries(style)) {
     await printer.addTextStyle({ [key]: value });
@@ -81,7 +80,7 @@ const withStyle = async (
 const withTextSize = async (
   printer: Printer,
   size: { width: number; height: number },
-  action: () => Promise<void>,
+  action: () => Promise<void>
 ): Promise<void> => {
   await printer.addTextSize(size);
   await action();
@@ -91,7 +90,7 @@ const withTextSize = async (
 const withAlignment = async (
   printer: Printer,
   alignment: number,
-  action: () => Promise<void>,
+  action: () => Promise<void>
 ): Promise<void> => {
   await printer.addTextAlign(alignment);
   await action();
@@ -115,27 +114,59 @@ const buildWelcomeMessage = async (printer: Printer, customerName: string): Prom
   });
 };
 
-const buildOrderNumber = async (printer: Printer, orderId: string): Promise<void> => {
+const buildOrderNumber = async (printer: Printer, orderId: string, customerName?: string): Promise<void> => {
   await withAlignment(printer, PrinterConstants.ALIGN_LEFT, async () => {
-    await printer.addLineSpace(32); // Add space before black background
-    await withStyle(printer, { reverse: PrinterConstants.TRUE }, async () => {
-      await withTextSize(printer, { width: 2, height: 2 }, async () => {
-        await printer.addText(`  ${orderId}  `);
-      });
-    });
-    await printer.addLineSpace(32); // Add space after black background
+    await printer.addLineSpace(32);
+    await withStyle(
+      printer,
+      { reverse: PrinterConstants.TRUE },
+      async () => {
+        await withTextSize(printer, { width: 2, height: 2 }, async () => {
+          // Create a full-width row with order ID and customer name
+          const customerDisplay = customerName 
+            ? `${customerName.split(' ')[0]} ${customerName.split(' ')[1]?.[0] || ''}.`
+            : '';
+          await Printer.addTextLine(printer, {
+            left: `  ${orderId}`,
+            right: `${customerDisplay}  `,
+          });
+        });
+      }
+    );
+    await printer.addLineSpace(32);
     await printer.addFeedLine(2);
   });
 };
 
 const buildOrderInfo = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
+  // Order timestamp first
   await withAlignment(printer, PrinterConstants.ALIGN_LEFT, async () => {
-    await printer.addText(order.fulfillmentMode);
-    await printer.addFeedLine(1);
     if (order.createdAt) {
       await printer.addText(`Placed at ${new Date(order.createdAt).toLocaleString()}`);
-      await printer.addFeedLine(2);
+      await printer.addFeedLine(1);
     }
+  });
+
+  // Centered fulfillment mode with lines
+  await withAlignment(printer, PrinterConstants.ALIGN_CENTER, async () => {
+    await printer.addText('─'.repeat(42)); // Top line
+    await printer.addFeedLine(1);
+
+    await withStyle(
+      printer,
+      { em: PrinterConstants.TRUE },
+      async () => {
+        await withTextSize(printer, { width: 3, height: 2 }, async () => {
+          await printer.addTextSmooth(PrinterConstants.TRUE);
+          await printer.addText(order.fulfillmentMode.toUpperCase());
+          await printer.addTextSmooth(PrinterConstants.FALSE);
+        });
+      }
+    );
+    await printer.addFeedLine(1);
+    
+    await printer.addText('─'.repeat(42)); // Bottom line
+    await printer.addFeedLine(1);
   });
 };
 
@@ -144,7 +175,7 @@ const buildModifiers = async (printer: Printer, item: CartItemMerchantDto): Prom
     for (const modifier of group.modifiers) {
       await printer.addText(
         `  ${modifier.quantity}x ${modifier.name}${
-          modifier.price > 0 ? ` (${formatPrice(modifier.price)})` : ''
+          modifier.price > 0 ? ` ${formatPrice(modifier.price)}` : ''
         }`,
       );
       await printer.addFeedLine(1);
@@ -153,34 +184,30 @@ const buildModifiers = async (printer: Printer, item: CartItemMerchantDto): Prom
 };
 
 const buildOrderItem = async (printer: Printer, item: CartItemMerchantDto): Promise<void> => {
-  // Make item name bold, smooth, and larger
   await withStyle(printer, { em: PrinterConstants.TRUE }, async () => {
-    await printer.addTextSmooth(PrinterConstants.TRUE);
     await Printer.addTextLine(printer, {
       left: `${item.quantity}x ${item.name}`,
       right: formatPrice(item.price * item.quantity),
-      gapSymbol: '.',
     });
-    await printer.addTextSmooth(PrinterConstants.FALSE);
   });
   await printer.addFeedLine(1);
 
   await buildModifiers(printer, item);
 
   if (item.specialInstructions) {
-    await createBox(printer, 'Special Instructions:', item.specialInstructions, {
-      width: 38,
-      contentPadding: 1,
-    });
+    await createBox(
+      printer,
+      'Special Instructions:',
+      item.specialInstructions,
+      { width: 38, contentPadding: 1 }
+    );
   }
 };
 
 const calculateTaxAmount = (order: OrderMerchantDto): number => {
-  return (
-    order.cost?.fees?.reduce((sum, fee) => {
+  return order.cost?.fees?.reduce((sum, fee) => {
       return fee.description?.toLowerCase().includes('tax') ? sum + fee.amount : sum;
-    }, 0) || 0
-  );
+  }, 0) || 0;
 };
 
 const buildTotals = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
@@ -201,14 +228,23 @@ const buildTotals = async (printer: Printer, order: OrderMerchantDto): Promise<v
     });
     await printer.addFeedLine(1);
 
-    await withStyle(printer, { em: PrinterConstants.TRUE }, async () => {
-      await withTextSize(printer, { width: 2, height: 2 }, async () => {
-        await Printer.addTextLine(printer, {
-          left: 'TOTAL',
-          right: formatPrice(total),
+    // Make total bold with wider text
+    await withStyle(
+      printer,
+      { 
+        em: PrinterConstants.TRUE,
+      },
+      async () => {
+        await withTextSize(printer, { width: 2, height: 1 }, async () => {  // Width 2 for wider, height 1 for normal height
+          await printer.addTextSmooth(PrinterConstants.TRUE);
+          await Printer.addTextLine(printer, {
+            left: 'TOTAL',
+            right: formatPrice(total),
+          });
+          await printer.addTextSmooth(PrinterConstants.FALSE);
         });
-      });
-    });
+      }
+    );
   });
   await printer.addFeedLine(2);
 };
@@ -219,21 +255,17 @@ const buildFooter = async (printer: Printer, order: OrderMerchantDto): Promise<v
 
   await withAlignment(printer, PrinterConstants.ALIGN_CENTER, async () => {
     if (order.merchant) {
-      // Wrap merchant name if too long (max 32 chars per line)
-      const thankYouText = 'Thank you for ordering with';
-      await printer.addText(thankYouText);
+      await printer.addText('Thank you for ordering with');
       await printer.addFeedLine(1);
-
+      
+      // Wrap merchant name if too long (max 32 chars per line)
       const wrappedMerchantName = wrapText(order.merchant.name, 32);
       for (const line of wrappedMerchantName) {
         await printer.addText(line);
-        await printer.addFeedLine(1);
+        await printer.addFeedLine(2);
       }
-      await printer.addFeedLine(1);
 
-      await printer.addText('Merchant phone number:');
-      await printer.addFeedLine(1);
-      await printer.addText(order.merchant.phone);
+      await printer.addText(`Merchant phone number: ${order.merchant.phone}`);
       await printer.addFeedLine(2);
     } else {
       await printer.addText('Thank you for your order!');
@@ -248,7 +280,11 @@ export const buildOrderReceipt = (order: OrderMerchantDto) => {
     // Header
     await buildLogo(printer);
     await buildWelcomeMessage(printer, order.customer?.firstName || 'valued customer');
-    await buildOrderNumber(printer, order.readableId || order.id);
+    await buildOrderNumber(
+      printer, 
+      order.readableId || order.id,
+      `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`
+    );
     await buildOrderInfo(printer, order);
 
     // Items
@@ -260,7 +296,12 @@ export const buildOrderReceipt = (order: OrderMerchantDto) => {
 
     // Notes
     if (order.orderNotes) {
-      await createBox(printer, 'Order Notes:', order.orderNotes, { width: 42, contentPadding: 2 });
+      await createBox(
+        printer,
+        'Order Notes:',
+        order.orderNotes,
+        { width: 42, contentPadding: 2 }
+      );
     }
 
     // Totals and Footer
