@@ -1,6 +1,6 @@
-import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
-import type { PrintJob, PrintSection, PrintContent } from './printer.service';
 import { formatPrice } from '@/utils/format';
+import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
+import type { PrintContent, PrintJob, PrintSection } from './printer.service';
 
 export class OrderPrinterAdapter {
   createPrintJob(order: OrderMerchantDto): PrintJob {
@@ -70,17 +70,19 @@ export class OrderPrinterAdapter {
   private createNotesSection(order: OrderMerchantDto): PrintSection[] {
     if (!order.orderNotes) return [];
 
-    return [{
-      type: 'content',
-      align: 'left',
-      content: [
-        { type: 'feed', lines: 1 },
-        { type: 'text', text: 'Order Notes:' },
-        { type: 'feed', lines: 1 },
-        { type: 'text', text: order.orderNotes },
-        { type: 'feed', lines: 2 },
-      ],
-    }];
+    return [
+      {
+        type: 'content',
+        align: 'left',
+        content: [
+          { type: 'feed', lines: 1 },
+          { type: 'text', text: 'Order Notes:' },
+          { type: 'feed', lines: 1 },
+          { type: 'text', text: order.orderNotes },
+          { type: 'feed', lines: 2 },
+        ],
+      },
+    ];
   }
 
   private createTotalSection(order: OrderMerchantDto): PrintSection {
@@ -99,4 +101,4 @@ export class OrderPrinterAdapter {
       ],
     };
   }
-} 
+}

@@ -1,5 +1,5 @@
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@react-navigation/native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { styles } from './styles';
 
 interface ButtonProps {
@@ -10,12 +10,12 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
 }
 
-export const Button = ({ 
-  onPress, 
-  title, 
+export const Button = ({
+  onPress,
+  title,
   loading = false,
   topOffset = false,
-  variant = 'primary' 
+  variant = 'primary',
 }: ButtonProps) => {
   const { colors, dark } = useTheme();
 
@@ -33,24 +33,22 @@ export const Button = ({
       ]}
       disabled={loading}
     >
-      <Text 
+      <Text
         style={[
-          styles.text, 
+          styles.text,
           loading && styles.hidden,
-          { 
-            color: variant === 'primary' 
-              ? colors.card 
-              : colors.primary
-          }
+          {
+            color: variant === 'primary' ? colors.card : colors.primary,
+          },
         ]}
       >
         {title}
       </Text>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator 
-            size="small" 
-            color={variant === 'primary' ? colors.card : colors.primary} 
+          <ActivityIndicator
+            size="small"
+            color={variant === 'primary' ? colors.card : colors.primary}
           />
         </View>
       ) : null}

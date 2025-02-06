@@ -1,7 +1,12 @@
-import { type ReactNode, createContext, useContext, useState, useEffect, useMemo } from 'react';
-import type { DeviceInfo } from 'react-native-esc-pos-printer';
-import { usePrintersDiscovery, Printer, PrinterConstants, type PrinterStatusResponse } from 'react-native-esc-pos-printer';
 import { EscPosPrinterService, type PrinterService } from '@/services/printer.service';
+import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { DeviceInfo } from 'react-native-esc-pos-printer';
+import {
+  Printer,
+  PrinterConstants,
+  type PrinterStatusResponse,
+  usePrintersDiscovery,
+} from 'react-native-esc-pos-printer';
 
 /**
  * Core interfaces for printer state management
@@ -31,7 +36,10 @@ interface PrinterActions {
   clearPrinter: () => void;
 }
 
-type PrinterContextType = PrinterDiscoveryState & PrinterConnectionState & PrinterUIState & PrinterActions;
+type PrinterContextType = PrinterDiscoveryState &
+  PrinterConnectionState &
+  PrinterUIState &
+  PrinterActions;
 
 const PrinterContext = createContext<PrinterContextType | null>(null);
 
@@ -113,16 +121,18 @@ function serializePrinterData(printer: DeviceInfo): DeviceInfo {
  * Handles printer discovery, connection management, and UI state
  */
 export const PrinterProvider = ({ children }: { children: ReactNode }) => {
-  const { start, printerError: discoveryError, isDiscovering, printers: discoveredPrinters } = usePrintersDiscovery();
+  const {
+    start,
+    printerError: discoveryError,
+    isDiscovering,
+    printers: discoveredPrinters,
+  } = usePrintersDiscovery();
 
   const [selectedPrinter, setSelectedPrinter] = useState<DeviceInfo | null>(null);
   const [printerStatus, setPrinterStatus] = useState<PrinterStatusResponse | null>(null);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
 
-  const printerInstance = useMemo(
-    () => createPrinterInstance(selectedPrinter),
-    [selectedPrinter]
-  );
+  const printerInstance = useMemo(() => createPrinterInstance(selectedPrinter), [selectedPrinter]);
 
   const printerService = useMemo(() => {
     if (!printerInstance) return null;
@@ -145,8 +155,9 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [printerInstance]);
 
-  const isConnected = printerStatus?.connection.statusCode === PrinterConstants.TRUE && 
-                     printerStatus?.online.statusCode === PrinterConstants.TRUE;
+  const isConnected =
+    printerStatus?.connection.statusCode === PrinterConstants.TRUE &&
+    printerStatus?.online.statusCode === PrinterConstants.TRUE;
 
   const selectPrinter = (printer: DeviceInfo) => {
     setSelectedPrinter(serializePrinterData(printer));
@@ -172,9 +183,5 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     clearPrinter,
   };
 
-  return (
-    <PrinterContext.Provider value={contextValue}>
-      {children}
-    </PrinterContext.Provider>
-  );
+  return <PrinterContext.Provider value={contextValue}>{children}</PrinterContext.Provider>;
 };

@@ -12,7 +12,7 @@ export interface PrintSection {
   content: PrintContent[];
 }
 
-export type PrintContent = 
+export type PrintContent =
   | { type: 'text'; text: string }
   | { type: 'line'; left: string; right: string; gapSymbol?: string }
   | { type: 'feed'; lines: number }
@@ -119,4 +119,4 @@ export class EscPosPrinterService implements PrinterService {
         return PrinterConstants.ALIGN_LEFT;
     }
   }
-} 
+}

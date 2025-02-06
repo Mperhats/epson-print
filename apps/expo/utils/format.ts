@@ -6,4 +6,4 @@
 export function formatPrice(price?: number): string {
   if (!price) return '$0.00';
   return `$${(price / 100).toFixed(2)}`;
-} 
+}

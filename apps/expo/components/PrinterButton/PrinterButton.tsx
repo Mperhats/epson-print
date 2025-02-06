@@ -1,13 +1,13 @@
-import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@react-navigation/native';
+import React from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Button } from '@/components';
 import { usePrinterContext } from '@/components/PrinterProvider';
 
 export function PrinterButton() {
-  const { 
+  const {
     selectedPrinter,
     startDiscovery,
     isDiscovering,
@@ -15,7 +15,7 @@ export function PrinterButton() {
     selectPrinter,
     isConnected,
     showPrinterModal,
-    setShowPrinterModal
+    setShowPrinterModal,
   } = usePrinterContext();
   const { colors, dark } = useTheme();
 
@@ -25,20 +25,11 @@ export function PrinterButton() {
         style={[styles.printerButton, { backgroundColor: dark ? colors.card : 'transparent' }]}
         onPress={() => setShowPrinterModal(true)}
       >
-        <View 
-          style={[
-            styles.statusBadge,
-            { backgroundColor: isConnected ? '#4CAF50' : '#f44336' }
-          ]}
+        <View
+          style={[styles.statusBadge, { backgroundColor: isConnected ? '#4CAF50' : '#f44336' }]}
         >
-          <Ionicons
-            name="print"
-            size={16}
-            color="#fff"
-          />
-          <Text style={styles.statusText}>
-            {isConnected ? 'Connected' : 'Connect'}
-          </Text>
+          <Ionicons name="print" size={16} color="#fff" />
+          <Text style={styles.statusText}>{isConnected ? 'Connected' : 'Connect'}</Text>
         </View>
       </TouchableOpacity>
 
@@ -54,10 +45,11 @@ export function PrinterButton() {
                     styles.printerItem,
                     {
                       borderBottomColor: colors.border,
-                      backgroundColor: selectedPrinter?.target === printer.target 
-                        ? `${colors.primary}20`  // 20 is hex for 12% opacity
-                        : 'transparent'
-                    }
+                      backgroundColor:
+                        selectedPrinter?.target === printer.target
+                          ? `${colors.primary}20` // 20 is hex for 12% opacity
+                          : 'transparent',
+                    },
                   ]}
                   onPress={() => {
                     selectPrinter(printer);
@@ -68,7 +60,9 @@ export function PrinterButton() {
                     {printer.deviceName}
                     {selectedPrinter?.target === printer.target && ' (Selected)'}
                   </Text>
-                  <Text style={[styles.printerTarget, { color: `${colors.text}99` }]}>{printer.target}</Text>
+                  <Text style={[styles.printerTarget, { color: `${colors.text}99` }]}>
+                    {printer.target}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -169,4 +163,4 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 16,
   },
-}); 
+});

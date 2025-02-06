@@ -1,8 +1,12 @@
-import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
-import { useState, useMemo } from 'react';
-import { Printer, PrinterConstants, type PrinterStatusResponse } from 'react-native-esc-pos-printer';
 import { usePrinterConnection } from '@/components/PrinterProvider';
 import { OrderPrinterAdapter } from '@/services/order-printer.adapter';
+import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
+import { useMemo, useState } from 'react';
+import {
+  Printer,
+  PrinterConstants,
+  type PrinterStatusResponse,
+} from 'react-native-esc-pos-printer';
 
 function getAlignment(align: string): number {
   switch (align) {
