@@ -212,6 +212,9 @@ const buildTotals = async (printer: Printer, order: OrderMerchantDto): Promise<v
   const total = subtotal + taxAmount;
 
   await withAlignment(printer, PrinterConstants.ALIGN_LEFT, async () => {
+
+    await printer.addFeedLine(1);
+
     await Printer.addTextLine(printer, {
       left: 'Subtotal',
       right: formatPrice(subtotal),
