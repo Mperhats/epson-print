@@ -1,0 +1,15 @@
+{
+  "name": "@nosh/backend-merchant-sdk",
+  "version": "0.0.0",
+  "description": "Nosh Merchant API SDK",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit --pretty --project tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}

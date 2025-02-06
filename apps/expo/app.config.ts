@@ -1,5 +1,18 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+const buildProperties = {
+  android: {
+    compileSdkVersion: 35,
+    targetSdkVersion: 35,
+    minSdkVersion: 31, // NOTE: reducing this increases build times
+    kotlinVersion: '1.9.24',
+  },
+  ios: {
+    deploymentTarget: '15.1',
+    useFrameworks: 'static',
+  },
+};
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'epson-print',
@@ -46,7 +59,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     output: 'static',
     favicon: './assets/images/favicon.png',
   },
-  plugins: ['expo-router'],
+  plugins: ['expo-router', ['expo-build-properties', buildProperties]],
   experiments: {
     typedRoutes: true,
   },

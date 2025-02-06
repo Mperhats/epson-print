@@ -1,0 +1,16 @@
+{
+  "extends": "@nosh/tsconfig/base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "outDir": "./lib/",
+    "module": "es6",
+    "target": "es5",
+    "jsx": "react",
+    "allowJs": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "noImplicitAny": false
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

@@ -48,7 +48,10 @@
       "**/*.config.js",
       "**/__tests__/**",
       "**/*.test.*",
-      "**/*.spec.*"
+      "**/*.spec.*",
+      "packages/backend-merchant-sdk",
+      "apps/expo/ios",
+      "apps/expo/android"
     ]
   }
 }

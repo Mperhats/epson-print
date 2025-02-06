@@ -1,5 +1,6 @@
 import { Button, PrintersList, ScreenTitle } from '@/components';
-import { useRouter } from 'expo-router';
+import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { usePrintersDiscovery } from 'react-native-esc-pos-printer';
@@ -8,6 +9,7 @@ import type { DeviceInfo } from 'react-native-esc-pos-printer';
 export default memo(function DiscoveryScreen() {
   const { start, printerError, isDiscovering, printers } = usePrintersDiscovery();
   const router = useRouter();
+  const params = useLocalSearchParams<{ returnTo: string; order: string }>();
 
   const handlePrinterSelect = (printer: DeviceInfo) => {
     if (!printer) return;
@@ -21,10 +23,22 @@ export default memo(function DiscoveryScreen() {
       macAddress: printer.macAddress,
     };
 
-    router.push({
-      pathname: '/printer',
-      params: { printer: JSON.stringify(serializedPrinter) },
-    });
+    // If we have an order, go to order-print with both printer and order
+    if (params.order) {
+      router.push({
+        pathname: '/order-print',
+        params: {
+          printer: JSON.stringify(serializedPrinter),
+          order: params.order,
+        },
+      });
+    } else {
+      // Otherwise follow the normal printer selection flow
+      router.push({
+        pathname: '/printer',
+        params: { printer: JSON.stringify(serializedPrinter) },
+      });
+    }
   };
 
   return (
