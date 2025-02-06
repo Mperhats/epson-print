@@ -1,5 +1,6 @@
 import { Order } from '@/components/Order/Order';
 import { usePrinterPrint } from '@/components/PrinterProvider';
+import { createOrderPrintJob } from '@/services/order-printer.adapter';
 import type {
   OrderDeliveryInfoMerchantDtoCourierStatusEnum,
   OrderMerchantDto,
@@ -10,7 +11,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import activeItems from '../data/active-items.json';
 
 export default memo(function OrdersScreen() {
-  const { printOrder } = usePrinterPrint();
+  const { print } = usePrinterPrint();
   const { colors, dark } = useTheme();
 
   // Transform the raw data to match OrderMerchantDto
@@ -36,7 +37,8 @@ export default memo(function OrdersScreen() {
   })) as unknown as OrderMerchantDto[];
 
   const handleOrderPress = async (order: OrderMerchantDto) => {
-    await printOrder(order);
+    const printJob = createOrderPrintJob(order);
+    await print(printJob);
   };
 
   const theme = {

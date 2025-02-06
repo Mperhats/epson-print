@@ -1,6 +1,5 @@
-import { OrderPrinterAdapter } from '@/services/order-printer.adapter';
-import { EscPosPrinterService, type PrinterService } from '@/services/printer.service';
-import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
+import type { PrintJob } from '@/services/printer.service';
+import { createPrinter, print } from '@/services/printer.service';
 import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { DeviceInfo } from 'react-native-esc-pos-printer';
 import {
@@ -25,7 +24,6 @@ interface PrinterConnectionState {
   printerStatus: PrinterStatusResponse | null;
   isConnected: boolean;
   printerInstance: Printer | null;
-  printerService: PrinterService | null;
 }
 
 interface PrinterUIState {
@@ -44,7 +42,7 @@ interface PrinterPrintState {
 }
 
 interface PrinterPrintActions {
-  printOrder: (order: OrderMerchantDto) => Promise<void>;
+  print: (job: PrintJob) => Promise<void>;
 }
 
 type PrinterContextType = PrinterDiscoveryState &
@@ -107,8 +105,8 @@ export const usePrinterActions = () => {
 export const usePrinterPrint = () => {
   const context = useContext(PrinterContext);
   if (!context) throw new Error('usePrinterPrint must be used within a PrinterProvider');
-  const { printing, error, printOrder } = context;
-  return { printing, error, printOrder };
+  const { printing, error, print } = context;
+  return { printing, error, print };
 };
 
 /**
@@ -120,14 +118,6 @@ export const usePrinterContext = () => {
   if (!context) throw new Error('usePrinterContext must be used within a PrinterProvider');
   return context;
 };
-
-function createPrinterInstance(printer: DeviceInfo | null): Printer | null {
-  if (!printer) return null;
-  return new Printer({
-    target: printer.target,
-    deviceName: printer.deviceName,
-  });
-}
 
 function serializePrinterData(printer: DeviceInfo): DeviceInfo {
   return {
@@ -158,14 +148,10 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
   const [printing, setPrinting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const printerInstance = useMemo(() => createPrinterInstance(selectedPrinter), [selectedPrinter]);
-
-  const printerService = useMemo(() => {
-    if (!printerInstance) return null;
-    return new EscPosPrinterService(printerInstance);
-  }, [printerInstance]);
-
-  const orderAdapter = useMemo(() => new OrderPrinterAdapter(), []);
+  const printerInstance = useMemo(
+    () => selectedPrinter ? createPrinter(selectedPrinter.target, selectedPrinter.deviceName) : null,
+    [selectedPrinter]
+  );
 
   useEffect(() => {
     if (!printerInstance) {
@@ -195,8 +181,8 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     setSelectedPrinter(null);
   };
 
-  const printOrder = async (order: OrderMerchantDto) => {
-    if (!printerService) {
+  const handlePrint = async (job: PrintJob) => {
+    if (!printerInstance) {
       setError('No printer available');
       return;
     }
@@ -204,9 +190,7 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     try {
       setPrinting(true);
       setError(null);
-
-      const printJob = orderAdapter.createPrintJob(order);
-      await printerService.print(printJob);
+      await print(printerInstance, job);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to print');
     } finally {
@@ -223,14 +207,13 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     printerStatus,
     isConnected,
     printerInstance,
-    printerService,
     showPrinterModal,
     setShowPrinterModal,
     selectPrinter,
     clearPrinter,
     printing,
     error,
-    printOrder,
+    print: handlePrint,
   };
 
   return <PrinterContext.Provider value={contextValue}>{children}</PrinterContext.Provider>;

@@ -18,105 +18,86 @@ export type PrintContent =
   | { type: 'feed'; lines: number }
   | { type: 'cut' };
 
-export interface PrinterService {
-  /**
-   * Prints a structured print job
-   * @param job The print job to execute
-   * @returns The printer status after printing
-   */
-  print(job: PrintJob): Promise<PrinterStatusResponse>;
+const getAlignment = (align: string): number => {
+  switch (align) {
+    case 'left':
+      return PrinterConstants.ALIGN_LEFT;
+    case 'center':
+      return PrinterConstants.ALIGN_CENTER;
+    case 'right':
+      return PrinterConstants.ALIGN_RIGHT;
+    default:
+      return PrinterConstants.ALIGN_LEFT;
+  }
+};
 
-  /**
-   * Gets the underlying printer instance for advanced usage
-   * Use this when you need direct access to printer capabilities
-   */
-  getPrinter(): Printer;
-}
+const ensureConnection = async (printer: Printer): Promise<void> => {
+  await Printer.tryToConnectUntil(
+    printer,
+    (status) => status.online.statusCode === PrinterConstants.TRUE,
+  );
+};
 
-export class EscPosPrinterService implements PrinterService {
-  constructor(private printer: Printer) {}
+const printContent = async (printer: Printer, content: PrintContent): Promise<void> => {
+  switch (content.type) {
+    case 'text':
+      await printer.addText(content.text);
+      break;
+    case 'line':
+      await Printer.addTextLine(printer, {
+        left: content.left,
+        right: content.right,
+        gapSymbol: content.gapSymbol || '.',
+      });
+      break;
+    case 'feed':
+      await printer.addFeedLine(content.lines);
+      break;
+    case 'cut':
+      await printer.addCut();
+      break;
+  }
+};
 
-  getPrinter(): Printer {
-    return this.printer;
+const printSection = async (printer: Printer, section: PrintSection): Promise<void> => {
+  if (section.align) {
+    await printer.addTextAlign(getAlignment(section.align));
   }
 
-  async print(job: PrintJob): Promise<PrinterStatusResponse> {
-    try {
-      const result = await this.printer.addQueueTask(async () => {
-        await this.ensureConnection();
+  if (section.size) {
+    await printer.addTextSize(section.size);
+  }
 
-        for (const section of job.sections) {
-          await this.printSection(section);
-        }
+  for (const item of section.content) {
+    await printContent(printer, item);
+  }
+};
 
-        const result = await this.printer.sendData();
-        await this.printer.disconnect();
-        return result;
-      });
+export const print = async (printer: Printer, job: PrintJob): Promise<PrinterStatusResponse> => {
+  try {
+    const result = await printer.addQueueTask(async () => {
+      await ensureConnection(printer);
 
-      if (!result) {
-        throw new Error('Printer did not return a status response');
+      for (const section of job.sections) {
+        await printSection(printer, section);
       }
 
-      return result as PrinterStatusResponse;
-    } catch (error) {
-      await this.printer.disconnect();
-      throw error;
+      const result = await printer.sendData();
+      await printer.disconnect();
+      return result;
+    });
+
+    if (!result) {
+      throw new Error('Printer did not return a status response');
     }
+
+    return result as PrinterStatusResponse;
+  } catch (error) {
+    await printer.disconnect();
+    throw error;
   }
+};
 
-  private async ensureConnection(): Promise<void> {
-    await Printer.tryToConnectUntil(
-      this.printer,
-      (status) => status.online.statusCode === PrinterConstants.TRUE,
-    );
-  }
-
-  private async printSection(section: PrintSection): Promise<void> {
-    if (section.align) {
-      await this.printer.addTextAlign(this.getAlignment(section.align));
-    }
-
-    if (section.size) {
-      await this.printer.addTextSize(section.size);
-    }
-
-    for (const item of section.content) {
-      await this.printContent(item);
-    }
-  }
-
-  private async printContent(content: PrintContent): Promise<void> {
-    switch (content.type) {
-      case 'text':
-        await this.printer.addText(content.text);
-        break;
-      case 'line':
-        await Printer.addTextLine(this.printer, {
-          left: content.left,
-          right: content.right,
-          gapSymbol: content.gapSymbol || '.',
-        });
-        break;
-      case 'feed':
-        await this.printer.addFeedLine(content.lines);
-        break;
-      case 'cut':
-        await this.printer.addCut();
-        break;
-    }
-  }
-
-  private getAlignment(align: string): number {
-    switch (align) {
-      case 'left':
-        return PrinterConstants.ALIGN_LEFT;
-      case 'center':
-        return PrinterConstants.ALIGN_CENTER;
-      case 'right':
-        return PrinterConstants.ALIGN_RIGHT;
-      default:
-        return PrinterConstants.ALIGN_LEFT;
-    }
-  }
-}
+export const createPrinter = (target: string, deviceName: string): Printer => {
+  return new Printer({ target, deviceName });
+};
