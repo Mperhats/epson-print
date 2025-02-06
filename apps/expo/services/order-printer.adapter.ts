@@ -4,7 +4,7 @@ import { Printer, PrinterConstants } from 'react-native-esc-pos-printer';
 
 const printHeader = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
   await printer.addTextAlign(PrinterConstants.ALIGN_CENTER);
-  
+
   // Add splash image at the top
   await printer.addImage({
     source: require('@/assets/images/splash.png'),
