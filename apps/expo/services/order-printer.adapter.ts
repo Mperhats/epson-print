@@ -33,7 +33,7 @@ const createBoxLine = (
   content: string,
   { width, indent = 2 }: BoxConfig,
   leftChar: string,
-  rightChar: string
+  rightChar: string,
 ): string => {
   const indentStr = ' '.repeat(indent);
   const paddedContent = content.padEnd(width - 2);
@@ -44,7 +44,7 @@ const createBox = async (
   printer: Printer,
   title: string,
   content: string,
-  config: BoxConfig
+  config: BoxConfig,
 ): Promise<void> => {
   const { width, contentPadding = 1 } = config;
   const contentWidth = width - 4;
@@ -69,7 +69,7 @@ const createBox = async (
 const withStyle = async (
   printer: Printer,
   style: { [key: string]: number },
-  action: () => Promise<void>
+  action: () => Promise<void>,
 ): Promise<void> => {
   for (const [key, value] of Object.entries(style)) {
     await printer.addTextStyle({ [key]: value });
@@ -81,7 +81,7 @@ const withStyle = async (
 const withTextSize = async (
   printer: Printer,
   size: { width: number; height: number },
-  action: () => Promise<void>
+  action: () => Promise<void>,
 ): Promise<void> => {
   await printer.addTextSize(size);
   await action();
@@ -91,7 +91,7 @@ const withTextSize = async (
 const withAlignment = async (
   printer: Printer,
   alignment: number,
-  action: () => Promise<void>
+  action: () => Promise<void>,
 ): Promise<void> => {
   await printer.addTextAlign(alignment);
   await action();
@@ -168,19 +168,19 @@ const buildOrderItem = async (printer: Printer, item: CartItemMerchantDto): Prom
   await buildModifiers(printer, item);
 
   if (item.specialInstructions) {
-    await createBox(
-      printer,
-      'Special Instructions:',
-      item.specialInstructions,
-      { width: 38, contentPadding: 1 }
-    );
+    await createBox(printer, 'Special Instructions:', item.specialInstructions, {
+      width: 38,
+      contentPadding: 1,
+    });
   }
 };
 
 const calculateTaxAmount = (order: OrderMerchantDto): number => {
-  return order.cost?.fees?.reduce((sum, fee) => {
-    return fee.description?.toLowerCase().includes('tax') ? sum + fee.amount : sum;
-  }, 0) || 0;
+  return (
+    order.cost?.fees?.reduce((sum, fee) => {
+      return fee.description?.toLowerCase().includes('tax') ? sum + fee.amount : sum;
+    }, 0) || 0
+  );
 };
 
 const buildTotals = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
@@ -223,7 +223,7 @@ const buildFooter = async (printer: Printer, order: OrderMerchantDto): Promise<v
       const thankYouText = 'Thank you for ordering with';
       await printer.addText(thankYouText);
       await printer.addFeedLine(1);
-      
+
       const wrappedMerchantName = wrapText(order.merchant.name, 32);
       for (const line of wrappedMerchantName) {
         await printer.addText(line);
@@ -260,12 +260,7 @@ export const buildOrderReceipt = (order: OrderMerchantDto) => {
 
     // Notes
     if (order.orderNotes) {
-      await createBox(
-        printer,
-        'Order Notes:',
-        order.orderNotes,
-        { width: 42, contentPadding: 2 }
-      );
+      await createBox(printer, 'Order Notes:', order.orderNotes, { width: 42, contentPadding: 2 });
     }
 
     // Totals and Footer
