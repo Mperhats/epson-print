@@ -179,16 +179,12 @@ const buildModifiers = async (printer: Printer, item: CartItemMerchantDto): Prom
 };
 
 const buildOrderItem = async (printer: Printer, item: CartItemMerchantDto): Promise<void> => {
-  await withStyle(
-    printer,
-    { em: PrinterConstants.TRUE },
-    async () => {
-      await Printer.addTextLine(printer, {
-        left: `${item.quantity}x ${item.name}`,
-        right: formatPrice(item.price * item.quantity),
-      });
-    }
-  );
+  await withStyle(printer, { em: PrinterConstants.TRUE }, async () => {
+    await Printer.addTextLine(printer, {
+      left: `${item.quantity}x ${item.name}`,
+      right: formatPrice(item.price * item.quantity),
+    });
+  });
   await printer.addFeedLine(1);
 
   await buildModifiers(printer, item);
