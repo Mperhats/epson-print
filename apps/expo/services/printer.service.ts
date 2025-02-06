@@ -1,5 +1,8 @@
 import { Printer, PrinterConstants } from 'react-native-esc-pos-printer';
 
+/**
+ * Type definitions for structured print jobs
+ */
 export interface PrintJob {
   sections: PrintSection[];
 }
@@ -17,6 +20,9 @@ export type PrintContent =
   | { type: 'feed'; lines: number }
   | { type: 'cut' };
 
+/**
+ * Helper functions for executing print jobs
+ */
 const getAlignment = (align: string): number => {
   switch (align) {
     case 'left':
@@ -65,8 +71,13 @@ const printSection = async (printer: Printer, section: PrintSection): Promise<vo
   }
 };
 
-export const executeJob = async (printer: Printer, job: PrintJob): Promise<void> => {
-  for (const section of job.sections) {
-    await printSection(printer, section);
-  }
+/**
+ * Creates a print task function that can be passed to the printer provider
+ */
+export const createPrintTask = (job: PrintJob) => {
+  return async (printer: Printer): Promise<void> => {
+    for (const section of job.sections) {
+      await printSection(printer, section);
+    }
+  };
 };

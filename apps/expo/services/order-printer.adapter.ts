@@ -1,6 +1,7 @@
 import { formatPrice } from '@/utils/format';
 import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
 import type { PrintContent, PrintJob, PrintSection } from './printer.service';
+import { createPrintTask } from './printer.service';
 
 const createHeaderSection = (order: OrderMerchantDto): PrintSection => ({
   type: 'header',
@@ -86,7 +87,7 @@ const createTotalSection = (order: OrderMerchantDto): PrintSection => ({
   ],
 });
 
-export const createOrderPrintJob = (order: OrderMerchantDto): PrintJob => ({
+const createOrderPrintJob = (order: OrderMerchantDto): PrintJob => ({
   sections: [
     createHeaderSection(order),
     createItemsSection(order),
@@ -94,3 +95,11 @@ export const createOrderPrintJob = (order: OrderMerchantDto): PrintJob => ({
     createTotalSection(order),
   ].filter(Boolean) as PrintSection[],
 });
+
+/**
+ * Creates a print task for the given order that can be passed to the printer provider
+ */
+export const printOrder = (order: OrderMerchantDto) => {
+  const job = createOrderPrintJob(order);
+  return createPrintTask(job);
+};

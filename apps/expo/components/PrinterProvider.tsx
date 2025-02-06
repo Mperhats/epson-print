@@ -1,5 +1,3 @@
-import type { PrintJob } from '@/services/printer.service';
-import { executeJob } from '@/services/printer.service';
 import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { DeviceInfo } from 'react-native-esc-pos-printer';
 import {
@@ -42,7 +40,7 @@ interface PrinterPrintState {
 }
 
 interface PrinterPrintActions {
-  print: (job: PrintJob) => Promise<void>;
+  print: (printTask: (printer: Printer) => Promise<void>) => Promise<void>;
 }
 
 type PrinterContextType = PrinterDiscoveryState &
@@ -195,7 +193,7 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const handlePrint = async (job: PrintJob) => {
+  const handlePrint = async (printTask: (printer: Printer) => Promise<void>) => {
     if (!printerInstance) {
       setError('No printer available');
       return;
@@ -207,7 +205,7 @@ export const PrinterProvider = ({ children }: { children: ReactNode }) => {
 
       await printerInstance.addQueueTask(async () => {
         await ensureConnection(printerInstance);
-        await executeJob(printerInstance, job);
+        await printTask(printerInstance);
         const result = await printerInstance.sendData();
         await printerInstance.disconnect();
         return result;
