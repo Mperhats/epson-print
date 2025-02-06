@@ -1,6 +1,6 @@
 import { Order } from '@/components/Order/Order';
 import { usePrinterPrint } from '@/components/PrinterProvider';
-import { createOrderPrintJob } from '@/services/order-printer.adapter';
+import { printOrder } from '@/services/order-printer.adapter';
 import type {
   OrderDeliveryInfoMerchantDtoCourierStatusEnum,
   OrderMerchantDto,
@@ -37,8 +37,8 @@ export default memo(function OrdersScreen() {
   })) as unknown as OrderMerchantDto[];
 
   const handleOrderPress = async (order: OrderMerchantDto) => {
-    const printJob = createOrderPrintJob(order);
-    await print(printJob);
+    const printTask = printOrder(order);
+    await print(printTask);
   };
 
   const theme = {

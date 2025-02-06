@@ -1,105 +1,77 @@
 import { formatPrice } from '@/utils/format';
 import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
-import type { PrintContent, PrintJob, PrintSection } from './printer.service';
-import { createPrintTask } from './printer.service';
+import { Printer, PrinterConstants } from 'react-native-esc-pos-printer';
 
-const createHeaderSection = (order: OrderMerchantDto): PrintSection => ({
-  type: 'header',
-  align: 'center',
-  content: [
-    { type: 'text', text: 'ORDER RECEIPT' },
-    { type: 'feed', lines: 2 },
-    { type: 'text', text: `Order #${order.readableId || order.id}` },
-    { type: 'feed', lines: 2 },
-  ],
-});
+const printHeader = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
+  await printer.addTextAlign(PrinterConstants.ALIGN_CENTER);
+  await printer.addText('ORDER RECEIPT');
+  await printer.addFeedLine(2);
+  await printer.addText(`Order #${order.readableId || order.id}`);
+  await printer.addFeedLine(2);
+};
 
-const createItemsSection = (order: OrderMerchantDto): PrintSection => {
-  const content: PrintContent[] = [];
+const printItems = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
+  await printer.addTextAlign(PrinterConstants.ALIGN_LEFT);
 
   for (const item of order.cartItems || []) {
-    content.push({
-      type: 'line',
+    await Printer.addTextLine(printer, {
       left: `${item.quantity}x ${item.name}`,
       right: formatPrice(item.price * item.quantity),
     });
-    content.push({ type: 'feed', lines: 1 });
+    await printer.addFeedLine(1);
 
     // Add modifiers
     for (const group of item.cartModifierGroups || []) {
       for (const modifier of group.modifiers) {
-        content.push({
-          type: 'text',
-          text: `  ${modifier.quantity}x ${modifier.name}${
+        await printer.addText(
+          `  ${modifier.quantity}x ${modifier.name}${
             modifier.price > 0 ? ` (${formatPrice(modifier.price)})` : ''
           }`,
-        });
-        content.push({ type: 'feed', lines: 1 });
+        );
+        await printer.addFeedLine(1);
       }
     }
 
     // Add special instructions
     if (item.specialInstructions) {
-      content.push({ type: 'text', text: '  Special Instructions:' });
-      content.push({ type: 'feed', lines: 1 });
-      content.push({ type: 'text', text: `  ${item.specialInstructions}` });
-      content.push({ type: 'feed', lines: 1 });
+      await printer.addText('  Special Instructions:');
+      await printer.addFeedLine(1);
+      await printer.addText(`  ${item.specialInstructions}`);
+      await printer.addFeedLine(1);
     }
   }
-
-  return {
-    type: 'content',
-    align: 'left',
-    content,
-  };
 };
 
-const createNotesSection = (order: OrderMerchantDto): PrintSection[] => {
-  if (!order.orderNotes) return [];
+const printNotes = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
+  if (!order.orderNotes) return;
 
-  return [
-    {
-      type: 'content',
-      align: 'left',
-      content: [
-        { type: 'feed', lines: 1 },
-        { type: 'text', text: 'Order Notes:' },
-        { type: 'feed', lines: 1 },
-        { type: 'text', text: order.orderNotes },
-        { type: 'feed', lines: 2 },
-      ],
-    },
-  ];
+  await printer.addTextAlign(PrinterConstants.ALIGN_LEFT);
+  await printer.addFeedLine(1);
+  await printer.addText('Order Notes:');
+  await printer.addFeedLine(1);
+  await printer.addText(order.orderNotes);
+  await printer.addFeedLine(2);
 };
 
-const createTotalSection = (order: OrderMerchantDto): PrintSection => ({
-  type: 'footer',
-  align: 'left',
-  size: { width: 2, height: 2 },
-  content: [
-    {
-      type: 'line',
-      left: 'TOTAL',
-      right: formatPrice(order.cost?.subtotalAmount),
-    },
-    { type: 'feed', lines: 4 },
-    { type: 'cut' },
-  ],
-});
-
-const createOrderPrintJob = (order: OrderMerchantDto): PrintJob => ({
-  sections: [
-    createHeaderSection(order),
-    createItemsSection(order),
-    ...createNotesSection(order),
-    createTotalSection(order),
-  ].filter(Boolean) as PrintSection[],
-});
+const printTotal = async (printer: Printer, order: OrderMerchantDto): Promise<void> => {
+  await printer.addTextAlign(PrinterConstants.ALIGN_LEFT);
+  await printer.addTextSize({ width: 2, height: 2 });
+  await Printer.addTextLine(printer, {
+    left: 'TOTAL',
+    right: formatPrice(order.cost?.subtotalAmount),
+  });
+  await printer.addFeedLine(4);
+  await printer.addCut();
+};
 
 /**
  * Creates a print task for the given order that can be passed to the printer provider
  */
 export const printOrder = (order: OrderMerchantDto) => {
-  const job = createOrderPrintJob(order);
-  return createPrintTask(job);
+  return async (printer: Printer): Promise<void> => {
+    await printHeader(printer, order);
+    await printItems(printer, order);
+    await printNotes(printer, order);
+    await printTotal(printer, order);
+  };
 };
