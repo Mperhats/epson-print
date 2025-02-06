@@ -2,10 +2,11 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
-    width: 300,
-    paddingVertical: 20,
+    borderWidth: 1,
+    borderRadius: 8,
+    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },

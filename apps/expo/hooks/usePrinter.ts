@@ -1,39 +1,27 @@
 import type { OrderMerchantDto } from '@nosh/backend-merchant-sdk';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  type DeviceInfo,
-  Printer,
-  PrinterConstants,
-  type PrinterStatusResponse,
-} from 'react-native-esc-pos-printer';
+import { useState, useMemo } from 'react';
+import { Printer, PrinterConstants, type PrinterStatusResponse } from 'react-native-esc-pos-printer';
+import { usePrinterConnection } from '@/components/PrinterProvider';
+import { OrderPrinterAdapter } from '@/services/order-printer.adapter';
 
-export const usePrinter = (printerDevice: DeviceInfo | null) => {
+function getAlignment(align: string): number {
+  switch (align) {
+    case 'left':
+      return PrinterConstants.ALIGN_LEFT;
+    case 'center':
+      return PrinterConstants.ALIGN_CENTER;
+    case 'right':
+      return PrinterConstants.ALIGN_RIGHT;
+    default:
+      return PrinterConstants.ALIGN_LEFT;
+  }
+}
+
+export const usePrinter = () => {
   const [printing, setPrinting] = useState(false);
-  const [currentStatus, setStatus] = useState<PrinterStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const printerInstance = useMemo(() => {
-    if (!printerDevice) return null;
-    return new Printer({
-      target: printerDevice.target,
-      deviceName: printerDevice.deviceName,
-    });
-  }, [printerDevice]);
-
-  useEffect(() => {
-    if (!printerInstance) return;
-
-    const stop = Printer.monitorPrinter(printerInstance, (nextStatus) => {
-      setStatus(nextStatus);
-    });
-
-    return stop;
-  }, [printerInstance]);
-
-  const formatPrice = (price?: number) => {
-    if (!price) return '$0.00';
-    return `$${(price / 100).toFixed(2)}`;
-  };
+  const { printerInstance, printerStatus } = usePrinterConnection();
+  const orderAdapter = useMemo(() => new OrderPrinterAdapter(), []);
 
   const printOrder = async (order: OrderMerchantDto) => {
     if (!printerInstance) {
@@ -45,84 +33,50 @@ export const usePrinter = (printerDevice: DeviceInfo | null) => {
       setPrinting(true);
       setError(null);
 
-      const res = await printerInstance.addQueueTask(async () => {
+      const printJob = orderAdapter.createPrintJob(order);
+      await printerInstance.addQueueTask(async () => {
         await Printer.tryToConnectUntil(
           printerInstance,
-          (status) => status.online.statusCode === PrinterConstants.TRUE,
+          (status: PrinterStatusResponse) => status.online.statusCode === PrinterConstants.TRUE,
         );
 
-        // Header
-        await printerInstance.addTextAlign(PrinterConstants.ALIGN_CENTER);
-        await printerInstance.addTextSize({ width: 2, height: 2 });
-        await printerInstance.addText('ORDER RECEIPT');
-        await printerInstance.addFeedLine(2);
+        for (const section of printJob.sections) {
+          if (section.align) {
+            await printerInstance.addTextAlign(getAlignment(section.align));
+          }
 
-        // Order ID
-        await printerInstance.addTextSize({ width: 1, height: 1 });
-        await printerInstance.addText(`Order #${order.readableId || order.id}`);
-        await printerInstance.addFeedLine(2);
+          if (section.size) {
+            await printerInstance.addTextSize(section.size);
+          }
 
-        // Items
-        await printerInstance.addTextAlign(PrinterConstants.ALIGN_LEFT);
-        for (const item of order.cartItems || []) {
-          await Printer.addTextLine(printerInstance, {
-            left: `${item.quantity}x ${item.name}`,
-            right: formatPrice(item.price * item.quantity),
-            gapSymbol: '.',
-          });
-          await printerInstance.addFeedLine();
-
-          // Modifiers
-          for (const group of item.cartModifierGroups || []) {
-            for (const modifier of group.modifiers) {
-              await printerInstance.addText(`  ${modifier.quantity}x ${modifier.name}`);
-              if (modifier.price > 0) {
-                await printerInstance.addText(` (${formatPrice(modifier.price)})`);
-              }
-              await printerInstance.addFeedLine();
+          for (const item of section.content) {
+            switch (item.type) {
+              case 'text':
+                await printerInstance.addText(item.text);
+                break;
+              case 'line':
+                await Printer.addTextLine(printerInstance, {
+                  left: item.left,
+                  right: item.right,
+                  gapSymbol: item.gapSymbol || '.',
+                });
+                break;
+              case 'feed':
+                await printerInstance.addFeedLine(item.lines);
+                break;
+              case 'cut':
+                await printerInstance.addCut();
+                break;
             }
           }
-
-          // Special Instructions
-          if (item.specialInstructions) {
-            await printerInstance.addText('  Special Instructions:');
-            await printerInstance.addFeedLine();
-            await printerInstance.addText(`  ${item.specialInstructions}`);
-            await printerInstance.addFeedLine();
-          }
         }
-
-        // Order Notes
-        if (order.orderNotes) {
-          await printerInstance.addFeedLine();
-          await printerInstance.addText('Order Notes:');
-          await printerInstance.addFeedLine();
-          await printerInstance.addText(order.orderNotes);
-          await printerInstance.addFeedLine(2);
-        }
-
-        // Total
-        await printerInstance.addTextSize({ width: 2, height: 2 });
-        await Printer.addTextLine(printerInstance, {
-          left: 'TOTAL',
-          right: formatPrice(order.cost?.subtotalAmount),
-          gapSymbol: '.',
-        });
-
-        await printerInstance.addFeedLine(4);
-        await printerInstance.addCut();
 
         const result = await printerInstance.sendData();
         await printerInstance.disconnect();
         return result;
       });
-
-      if (res) {
-        setStatus(res);
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to print');
-      await printerInstance.disconnect();
     } finally {
       setPrinting(false);
     }
@@ -130,9 +84,8 @@ export const usePrinter = (printerDevice: DeviceInfo | null) => {
 
   return {
     printing,
-    currentStatus,
+    currentStatus: printerStatus,
     error,
     printOrder,
-    printerInstance,
   };
 };

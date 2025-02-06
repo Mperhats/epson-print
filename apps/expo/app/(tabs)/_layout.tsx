@@ -69,13 +69,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="camera" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: 'Orders',
-          tabBarIcon: ({ color }) => <TabBarIcon name="first-order" color={color} />,
-        }}
-      />
     </Tabs>
   );
 }
